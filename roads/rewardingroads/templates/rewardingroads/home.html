@@ -1,0 +1,142 @@
+{% extends 'rewardingroads/base.html' %}
+
+{% block content %}
+
+	<!-- Breadcrumbs-->
+	<ol class="breadcrumb">
+	<li class="breadcrumb-item">
+		<a href="/roads/">Dashboard</a>
+	</li>
+	<li class="breadcrumb-item active">My Dashboard</li>
+	<li>
+		<span class="pull-right"><a href="/roads/drive/" target="_blank">Driving Simulator</a></span>
+	</li>
+	<li>
+		<span class="pull-right"><a href="/roads/govt/" target="_blank">Government Dashboard</a></span>
+	</li>
+	</ol>
+
+	<div class="row">
+		<div class="col-xl-3 col-sm-3 mb-3">
+			<div class="card text-white bg-primary o-hidden">
+			<div class="card-body">
+				<div class="card-body-icon">
+				<i class="fa fa-fw fa-map-marker"></i>
+				</div>
+				<div class="mr-5" id="location">{{user.last_latitude}},{{user.last_longitude}}</div>
+			</div>
+			<span class="card-footer text-white clearfix small z-1" href="#">
+				<span class="float-left">Current Location</span>
+			</span>
+			</div>
+		</div>
+		<div class="col-xl-3 col-sm-3 mb-3">
+			<div class="card text-white bg-danger o-hidden">
+			<div class="card-body">
+				<div class="card-body-icon">
+				<i class="fa fa-fw fa-money"></i>
+				</div>
+				<div class="mr-5">{{ user.credits }}</div>
+			</div>
+			<a class="card-footer text-white clearfix small z-1" href="#">
+				<span class="float-left">Credits Earned</span>
+			</a>
+			</div>
+		</div>
+		<div class="col-xl-3 col-sm-3 mb-3">
+			<div class="card text-white bg-info o-hidden">
+			<div class="card-body">
+				<div class="card-body-icon">
+				<i class="fa fa-fw fa-bar-chart"></i>
+				</div>
+				<div class="mr-5">{{ verified_reports|length }}/{{total_reports|length}}</div>
+			</div>
+			<a class="card-footer text-white clearfix small z-1" href="#">
+				<span class="float-left">Verified Reports</span>
+			</a>
+			</div>
+		</div>
+		<div class="col-xl-3 col-sm-3 mb-3">
+			{% if user.trust < 0.80 %}
+				<div class="card text-white bg-danger o-hidden">
+			{% else %}
+				<div class="card text-white bg-success	 o-hidden">
+			{% endif %}
+			<div class="card-body">
+				<div class="card-body-icon">
+				<i class="fa fa-fw fa-check"></i>
+				</div>
+				<div class="mr-5">{{user.trust}}</div>
+			</div>
+			<a class="card-footer text-white clearfix small z-1" href="#">
+				<span class="float-left">Your Trust Score</span>
+			</a>
+			</div>
+		</div>
+	</div>
+
+
+	<div class="row">
+	<div class="col-xl-12 col-sm-12">
+		<div class="card mb-3">
+			<div class="card-header">
+				My Past Reports
+			</div>
+			<div class="card-body">
+				<div class="table-responsive">
+				<table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
+					<thead>
+					<tr>
+						<th>Latitude</th>
+						<th>Longitude</th>
+						<th>When</th>
+						<th>Where</th>
+						<th>Trigger</th>
+						<th>Severity</th>
+						<th>Status</th>
+					</tr>
+					</thead>
+					<tbody>
+					{% for report in total_reports %}
+						<tr>
+						<td>{{report.latitude}}</td>
+						<td>{{report.longitude}}</td>
+						<td>{{report.reporting_time}}</td>
+						<td>{{report.road.name}}</td>
+						<td>{{report.trigger}}</td>
+						<td>{{report.severity}}</td>
+						{% if report.processed %}
+							<td>Verified. Received {{report.credits}}</td>
+						{% else %}
+							<td>Pending Verification</td>
+						{% endif %}
+						</tr>
+					{% endfor %}
+					</tbody>
+				</table>
+				</div>
+			</div>
+		</div>
+	</div>
+
+{% endblock %}
+
+
+{% block script %}
+<script type="text/javascript">
+url = '{{ WEBSOCKET_URI }}location{{user.name}}';
+var locationSocket = new WebSocket(url);
+locationSocket.onmessage = function(e) {
+	alert(e.data);
+}
+
+$('#dataTable').dataTable();
+
+navigator.geolocation.getCurrentPosition(function(location) {
+	latitude = location.coords.latitude;
+	longitude = location.coords.longitude;
+	document.getElementById('location').innerHTML = latitude+','+longitude;
+});
+
+</script>
+{% endblock %}

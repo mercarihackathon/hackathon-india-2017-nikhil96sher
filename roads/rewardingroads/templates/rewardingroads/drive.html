@@ -1,0 +1,317 @@
+{% extends 'rewardingroads/base.html' %}
+
+{% block content %}
+
+	<ol class="breadcrumb">
+	<li class="breadcrumb-item">
+		<a href="/roads/">Dashboard</a>
+	</li>
+	<li class="breadcrumb-item active">Driving Simulator</li>
+	<li>
+		<span class="pull-right"><a href="/roads/govt/" target="_blank">Government Dashboard</a></span>
+	</li>
+	</ol>
+
+
+	<div class="row">
+		<div class="col-sm-6">
+			<div id="map">
+				
+			</div>
+		</div>
+	</div>
+
+	<div class="row">
+			<div class="col-xl-2 col-sm-12 mb-3">
+				<div class="card text-white bg-success o-hidden">
+				<div class="card-body">
+					<div class="card-body-icon">
+					<i class="fa fa-fw fa-map-marker"></i>
+					</div>
+					<div class="mr-5" id="latitude">{{user.last_latitude}}</div>
+				</div>
+				<span class="card-footer text-white clearfix small z-1" href="#">
+					<span class="float-left">Current Latitude</span>
+				</span>
+				</div>
+			</div>
+			<div class="col-xl-2 col-sm-12 mb-3">
+				<div class="card text-white bg-success o-hidden">
+				<div class="card-body">
+					<div class="card-body-icon">
+					<i class="fa fa-fw fa-map-marker"></i>
+					</div>
+					<div class="mr-5" id="longitude">{{user.last_longitude}}</div>
+				</div>
+				<span class="card-footer text-white clearfix small z-1" href="#">
+					<span class="float-left">Current Longitude</span>
+				</span>
+				</div>
+			</div>
+			<div class="col-sm-3">
+				<div class="form-group">
+					<label>Road Travelling</label>
+					<select style="width: 100%" id="roadnumber">
+					{% for road in roads %}
+						<option value="{{road.pk}}">{{road}}</option>
+					{% endfor %}
+					</select> 
+				</div>
+			</div>
+			<div class="col-sm-3">
+				<div class="form-group">
+					<label>Road Condition (On a scale of 1-5)</label>
+					<select style="width: 100%" class="o-hidden" id="roadcondition">
+						<option value="1">1 - Very Poor</option>
+						<option value="2">2 - Poor</option>
+						<option value="3">3 - Average</option>
+						<option value="4">4 - Good</option>
+						<option value="5">5 - Very Good</option>
+					</select>
+				</div>
+			</div>
+			<div class="col-sm-2">
+				<button type="submit" id="generate-data" class="btn btn-primary" onclick="generateDataSet(0,$('#roadcondition').val())">Generate Data</button>
+			</div>
+	</div>
+	<div class="row">
+		<div class="col-sm-8">
+			<div class="card">
+			<div class="card-header">
+			Reports Made
+			<span class="pull-right" id="counter"></span>
+			</div>
+			<div class="card-body">
+				<table class="table table-striped" id="reports">
+					<thead>
+						<tr>
+							<th>Latitude</th>
+							<th>Longitude</th>
+							<th>Trigger Type</th>
+							<th>Severity</th>
+							<th>Incident Time</th>
+						</tr>
+					</thead>
+					<tbody>
+					</tbody>
+				</table>
+			</div>
+			</div>
+		</div>
+		<div class="col-sm-4">
+			<div class="card">
+			<div class="card-header">
+			Pending Reports in Your route
+			<span class="pull-right" id="check-counter"></span>
+			</div>
+			<div class="card-body">
+				<table class="table table-striped" id="confirms">
+					<thead>
+						<tr>
+							<th>Latitude</th>
+							<th>Longitude</th>
+						</tr>
+					</thead>
+					<tbody>
+					{% for element in unchecked %}
+						<tr id="confirm-{{forloop.counter}}">
+							<td>{{element.latitude}}</td>
+							<td>{{element.longitude}}</td>
+						</tr>
+					{% endfor %}
+					</tbody>
+				</table>
+			</div>
+			</div>
+		</div>
+	</div>
+{% endblock %}
+
+{% block script %}
+<script type="text/javascript">
+
+var triggerOptions = ["Decelaration","Lane Switching"];
+var severityOptions = [1,2,3,4,5];
+var invocations = {
+	'1' : 10,
+	'2' : 7,
+	'3' : 5,
+	'4' : 3,
+	'5' : 1
+}
+
+latitude = {
+	aInternal: {{user.last_latitude}},
+	aListener: function(val) {document.getElementById("latitude").innerHTML = val;},
+	set a(val) {
+		this.aInternal = val;
+		this.aListener(val);
+	},
+	get a() {
+		return this.aInternal;
+	}
+}
+
+longitude = {
+	aInternal: {{user.last_longitude}},
+	aListener: function(val) {
+		document.getElementById("longitude").innerHTML = val;
+	},
+	set a(val) {
+	this.aInternal = val;
+	this.aListener(val);
+	},
+	get a() {
+	return this.aInternal;
+	}
+}
+
+var listData = [];
+var threshold = 0.1;
+
+function distance(oldLat,oldLon,newLat,newLon,times)
+{
+	return times*(Math.abs(oldLat-newLat) + Math.abs(oldLon-newLon))
+}
+
+var toBeChecked = JSON.parse("{{toBeChecked}}");
+var times = 1;
+var directionChoices = [-1,1];
+var direction = directionChoices[Math.floor(Math.random()*directionChoices.length)];
+function generateDataSet(time,type)
+{
+	$("#counter").html(time+"/"+invocations[type]);
+	if(time == 0)
+	{
+		$("#reports tbody tr").remove(); 
+	}
+	//generateData Randomly on the basis of information shared.
+	currentLat = latitude.a;
+	currentLon = longitude.a;
+	temp1 = parseFloat(currentLat)+direction*parseFloat(Math.random()/10);
+	temp2 = parseFloat(currentLon)+direction*parseFloat(Math.random()/10);
+	console.log(temp1);
+	latitude.a = temp1.toFixed(6);
+	longitude.a = temp2.toFixed(6);
+	var d = new Date();
+	for(i =0; i<toBeChecked.length;i++)
+	{
+		lat = toBeChecked[i][0];
+		lon = toBeChecked[i][1];
+		ind = toBeChecked[i][2];
+		if(distance(currentLat,currentLon,lat,lon) != NaN && distance(currentLat,currentLon,lat,lon,1) < threshold)
+		{
+			severity = severityOptions[Math.floor(Math.random()*severityOptions.length)];
+			row = $("<tr></tr>");
+			col1 = $("<td>"+latitude.a+"</td>");
+			col2 = $("<td>"+longitude.a+"</td>");
+			col3 = $("<td>Confirmation</td>");
+			col4 = $("<td>"+severity+"</td>");
+			col5 = $("<td>"+d.toISOString()+"</td>");
+			row.append(col1,col2,col3,col4,col5).prependTo("#reports");
+			if(severity <= 2)
+				$("#confirm-"+ind).addClass('bg-success');
+			else
+				$("#confirm-"+ind).addClass('bg-danger');
+			toBeChecked.splice(i, 1);
+			$("#check-counter").html({{unchecked|length}} - toBeChecked.length + "/" + {{unchecked|length}});
+		}
+	}
+
+	if(distance(currentLat,currentLon,latitude.a,longitude.a,times) > threshold)
+	{
+		times = 1;
+		trigger = triggerOptions[Math.floor(Math.random()*triggerOptions.length)];
+		severity = severityOptions[Math.floor(Math.random()*severityOptions.length)];
+
+		row = $("<tr></tr>");
+		col1 = $("<td>"+latitude.a+"</td>");
+		col2 = $("<td>"+longitude.a+"</td>");
+		col3 = $("<td>"+trigger+"</td>");
+		col4 = $("<td>"+severity+"</td>");
+		col5 = $("<td>"+d.toISOString()+"</td>");
+		row.append(col1,col2,col3,col4,col5).prependTo("#reports");
+	}
+	else
+	{
+		times = times+1;
+	}
+	if(time < invocations[type])
+	{
+		setTimeout((function() {
+			generateDataSet(time+1,type);
+			}), 100/invocations[type]);
+	}
+	else
+	{
+		//Send Ajax Request with All the Data
+		var myRows = [];
+		var headers = $("#reports th");
+		var rows = $("#reports tbody tr").each(function(index) {
+			cells = $(this).find("td");
+			myRows[index] = {};
+			cells.each(function(cellIndex) {
+				myRows[index][$(headers[cellIndex]).html()] = $(this).html();
+			});
+		});
+		var myObj = {};
+		myObj.myrows = myRows;
+		myObj.road = $("#roadnumber").val();
+		// alert("Bulk Uploading Data");
+		$.ajax({
+		    url: '/roads/report/',
+		    type: 'POST',
+		    contentType: 'application/json; charset=utf-8',
+		    data: JSON.stringify(myObj),
+		    dataType: 'text',
+		    success: function(result) {
+				alert("Data Successfully Uploaded");
+		    }
+		});
+	}
+}
+
+navigator.geolocation.getCurrentPosition(function(location) {
+	latitude.a = location.coords.latitude;
+	longitude.a = location.coords.longitude;
+});
+
+	function initMap() {
+		var map = new google.maps.Map(document.getElementById('map'), {
+		  zoom: 8,
+		  center: {lat: latitude.a, lng: longitude.a}
+		});
+		var geocoder = new google.maps.Geocoder;
+		var infowindow = new google.maps.InfoWindow;
+
+		document.getElementById('generate-data').addEventListener('click', function() {
+		  geocodeLatLng(geocoder, map, infowindow);
+		});
+	}
+
+      function geocodeLatLng(geocoder, map, infowindow) {
+        var input = document.getElementById('latlng').value;
+        var latlngStr = input.split(',', 2);
+        var latlng = {lat: parseFloat(latlngStr[0]), lng: parseFloat(latlngStr[1])};
+        geocoder.geocode({'location': latlng}, function(results, status) {
+          if (status === 'OK') {
+            if (results[0]) {
+              map.setZoom(11);
+              var marker = new google.maps.Marker({
+                position: latlng,
+                map: map
+              });
+              infowindow.setContent(results[0].formatted_address);
+              infowindow.open(map, marker);
+            } else {
+              window.alert('No results found');
+            }
+          } else {
+            window.alert('Geocoder failed due to: ' + status);
+          }
+        });
+      }
+</script>
+<script async defer src="https://maps.googleapis.com/maps/api/js?key={{YOUR_API_KEY}}&callback=initMap"
+  type="text/javascript"></script>
+{% endblock %}

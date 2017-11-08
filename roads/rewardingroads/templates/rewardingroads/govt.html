@@ -1,0 +1,92 @@
+{% extends 'rewardingroads/base.html' %}
+
+{% block content %}
+
+	<ol class="breadcrumb">
+	<li class="breadcrumb-item">
+		<a href="/roads/">Dashboard</a>
+	</li>
+	<li class="breadcrumb-item active">Government Dashboard</li>
+	<li>
+		<span class="pull-right"><a href="/roads/drive/" target="_blank">Driving Simulator</a></span>
+	</li>
+	</ol>
+	<div class="row">
+		<div class="col-sm-3">
+			<div class="card text-white bg-danger o-hidden">
+			<div class="card-body">
+				<div class="card-body-icon">
+				<i class="fa fa-fw fa-map-marker"></i>
+				</div>
+				<div class="mr-5">{{pendingInformation}}</div>
+			</div>
+			<span class="card-footer text-white clearfix small z-1" href="#">
+				<span class="float-left">Pending Informations</span>
+			</span>
+			</div>
+		</div>
+		<div class="col-sm-3">
+			<div class="card text-white bg-primary o-hidden">
+			<div class="card-body">
+				<div class="card-body-icon">
+				<i class="fa fa-fw fa-bar-chart"></i>
+				</div>
+				<div class="mr-5">{{pendingReports}}</div>
+			</div>
+			<span class="card-footer text-white clearfix small z-1" href="#">
+				<span class="float-left">Pending Reports</span>
+			</span>
+			</div>
+		</div>
+		<div class="col-sm-3">
+			<div class="card text-white bg-danger o-hidden">
+			<div class="card-body">
+				<div class="card-body-icon">
+				<i class="fa fa-fw fa-users"></i>
+				</div>
+				<div class="mr-5">{{travellerCount}}</div>
+			</div>
+			<span class="card-footer text-white clearfix small z-1" href="#">
+				<span class="float-left">Travellers Joined</span>
+			</span>
+			</div>
+		</div>
+		<div class="col-sm-3">
+			<div class="card bg-warning o-hidden">
+			<div class="card-body">
+				<div class="card-body-icon">
+				<i class="fa fa-fw fa-money"></i>
+				</div>
+				<div class="mr-5">{{totalPenalty}}</div>
+			</div>
+			<span class="card-footer clearfix small z-1" href="#">
+				<span class="float-left">Total Penalty</span>
+			</span>
+			</div>
+		</div>
+	</div>
+	<div class="row">
+		<div class="col-sm-12">
+		<table class="table table-bordered">
+			<thead>
+				<th>Operator</th>
+				<th>Penalty</th>
+			</thead>
+			<tbody>
+				{% for operator in operators %}
+					<tr>
+						<td>{{operator.name}}</td>
+						<td>{{operator.penalty}}</td>
+					</tr>
+				{% endfor %}
+			</tbody>
+		</table>
+		</div>
+	</div>
+{% endblock %}
+
+{% block script %}
+<script type="text/javascript">
+
+</script>
+{% endblock %}

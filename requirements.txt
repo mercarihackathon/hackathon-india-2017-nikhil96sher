@@ -1,0 +1,5 @@
+certifi==2017.7.27.1
+Django==1.11.3
+django-location-field==2.0.3
+pytz==2017.2
+six==1.11.0
